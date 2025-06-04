@@ -2,8 +2,12 @@ import paho.mqtt.client as mqtt
 
 broker = "158.180.44.197"
 port = 1883
-topic = "iot1/teaching_factory/temperature"
+topic1 = "iot1/teaching_factory/temperature" #Temperature red, Time, 
+topic2 = "iot1/teaching_factory/dispenser_red"  #bottle, fill level grams, time red, recipe, vibration index
+topic3 = "iot1/teaching_factory/scale/final_weight"  #final weight grams
 payload = "on"
+
+
 
 def on_subscribe(client, userdata, mid, reason_code_list, properties):
     # Since we subscribed only for a single channel, reason_code_list contains
@@ -22,13 +26,22 @@ def on_unsubscribe(client, userdata, mid, reason_code_list, properties):
         print(f"Broker replied with failure: {reason_code_list[0]}")
     client.disconnect()
 
-def on_connect(client, userdata, flags, reason_code, properties):
+def on_connect_1(client, userdata, flags, reason_code, properties):
     if reason_code.is_failure:
         print(f"Failed to connect: {reason_code}. loop_forever() will retry connection")
     else:
         # we should always subscribe from on_connect callback to be sure
         # our subscribed is persisted across reconnections.
         client.subscribe("iot1/teaching_factory/temperature", qos=0)
+
+def on_connect_2(client, userdata, flags, reason_code, properties):
+    if reason_code.is_failure:
+        print(f"Failed to connect: {reason_code}. loop_forever() will retry connection")
+    else:
+        # we should always subscribe from on_connect callback to be sure
+        # our subscribed is persisted across reconnections.
+        client.subscribe("iot1/teaching_factory/dispenser_red", qos=0)
+
 
 # create function for callback
 def on_message(client, userdata, message):
@@ -42,12 +55,15 @@ mqttc.username_pw_set("bobm", "letmein")
 
 # assign function to callback
 mqttc.on_message = on_message
-mqttc.on_connect = on_connect
+mqttc.on_connect = on_connect_1
+mqttc.on_connect = on_connect_2
 mqttc.on_subscribe = on_subscribe                  
 mqttc.on_unsubscribe = on_unsubscribe           
 
 # establish connection
-mqttc.connect(host= broker, port = port)                                 
+mqttc.connect(host= broker, port = port)    
+
+mqttc.connect                             
 
 # subscribe
 #mqttc.subscribe(topic, qos=0)
