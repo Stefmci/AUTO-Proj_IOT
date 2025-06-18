@@ -1,8 +1,10 @@
 import paho.mqtt.client as mqtt
+from database.bottle_db import update_bottle, update_dispenser_temperature
+import json
 
 broker = "158.180.44.197"
 port = 1883
-topic = "iot1/teaching_factory/temperature"
+topic = "iot1/teaching_factory/#"
 payload = "on"
 
 def on_subscribe(client, userdata, mid, reason_code_list, properties):
@@ -28,13 +30,74 @@ def on_connect(client, userdata, flags, reason_code, properties):
     else:
         # we should always subscribe from on_connect callback to be sure
         # our subscribed is persisted across reconnections.
-        client.subscribe("iot1/teaching_factory/temperature", qos=0)
+        client.subscribe("iot1/teaching_factory/#", qos=0)
 
 # create function for callback
 def on_message(client, userdata, message):
     print(f"topic: {message.topic}")
-    print(f"message: {message.payload.decode("utf-8")}")
+    payload_str = message.payload.decode('utf-8')
+    print(f"message: {payload_str}")
     print("\n")
+
+    # Repariere das Datum, falls nötig
+    if "creation_date" in payload_str:
+        import re
+        payload_str = re.sub(r'("creation_date"\s*:\s*)(\d{4}-\d{2}-\d{2})', r'\1"\2"', payload_str)
+
+    try:
+        payload = json.loads(payload_str)
+    except Exception as e:
+        print(f"Fehler beim Parsen des JSON: {e}")
+        return
+
+    topic = message.topic
+
+    if "drop_oscillation" in topic:
+        bottle_id = payload.get("bottle")
+        if not bottle_id:
+            return
+        update_bottle(bottle_id, {"drop_oscillation": payload["drop_oscillation"]})
+
+    elif "ground_truth" in topic:
+        bottle_id = payload.get("bottle")
+        if not bottle_id:
+            return
+        update_bottle(bottle_id, {"is_cracked": payload["is_cracked"]})
+
+    elif "dispenser" in topic:
+        bottle_id = payload.get("bottle")
+        if not bottle_id:
+            return
+        dispenser = payload["dispenser"]
+        data = {
+            "fill_level_grams": payload["fill_level_grams"],
+            "recipe": payload["recipe"],
+            "vibration-index": payload["vibration-index"],
+            "time": payload.get("time")
+        }
+        update_bottle(bottle_id, {"dispenser": {dispenser: data}})
+
+    elif "temperature" in topic:
+        bottle_id = payload.get("bottle")
+        if not bottle_id:
+            return
+        dispenser = payload["dispenser"]
+        update_dispenser_temperature(bottle_id, dispenser, payload["temperature_C"])
+
+    elif "final_weight" in topic:
+        bottle_id = payload.get("bottle")
+        if not bottle_id:
+            return
+        update_bottle(bottle_id, {"final_weight": payload["final_weight"]})
+
+    elif "recipe" in topic:
+        print(f"Recipe empfangen: {payload}")
+        # Hier könntest du eine eigene update_recipe-Funktion schreiben,
+        # oder die Daten in einer separaten TinyDB speichern.
+        # Beispiel:
+        # update_recipe(recipe_id, payload)
+        print(f"Recipe empfangen: {payload}")
+
 
 # create client object
 mqttc = mqtt.Client(mqtt.CallbackAPIVersion.VERSION2)
