@@ -1,0 +1,22 @@
+code/1_persitierung/
+├── visualisierung
+│   ├── visualisierung.py
+│   └── __init__.py
+├── database
+│   ├── database.py
+│   ├── transform.py
+|   ├── data.csv
+│   └── __init__.py
+├── mqtt_client
+│   ├── mqtt_client.py
+│   └── __init__.py
+│── README.md
+└── requirements.txt
+
+Daten für Datenbank
+
+bottle  	vibration-index_red	    	time_red	fill_level_grams_red	recipe	temperature_C_red	final_weight_grams
+20939   	    102.823497	        	1716554173	    638.667673	        21	        23.045409	            45.01
+20940   	    105.050436	        	1716554177	    628.085354	        21	        24.043060	            44.01
+20941   	    100.824738	        	1716554181	    618.295130	        21	        23.664343	            45.31
+20942   	    107.097053	        	1716554185	    607.837681	        21	        23.052217	            45.41
